@@ -9,6 +9,13 @@ export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001
 
 export const DEFAULT_USERNAME = process.env.NEXT_PUBLIC_DEFAULT_USERNAME ?? 'ContrerasJoel';
 
+/**
+ * Sin este límite, si la API deja de responder (reinicio, proxy mal configurado) el
+ * `fetch` queda colgado hasta que el navegador decida cortarlo, y la página se queda
+ * indefinidamente en el esqueleto de carga: el usuario no distingue "lento" de "roto".
+ */
+const REQUEST_TIMEOUT_MS = 15_000;
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -25,14 +32,27 @@ export async function fetchProfile(
 ): Promise<ProfileResponse> {
   let response: Response;
 
+  const timeout = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+
   try {
     response = await fetch(`${API_URL}/user/${encodeURIComponent(username)}`, {
-      signal,
+      signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
       headers: { Accept: 'application/json' },
     });
   } catch (error) {
-    // Un fetch abortado no es un fallo: lo propagamos para que el store lo ignore.
-    if (error instanceof DOMException && error.name === 'AbortError') throw error;
+    if (error instanceof DOMException) {
+      // Se agotó el tiempo: la API existe pero no contesta.
+      if (error.name === 'TimeoutError') {
+        throw new ApiError(
+          'La API tardó demasiado en responder. Puede estar caída o reiniciándose.',
+          504,
+        );
+      }
+
+      // Cancelación explícita del llamador: no es un fallo, lo propagamos para que
+      // el store lo ignore en vez de pintar un error.
+      if (error.name === 'AbortError') throw error;
+    }
 
     throw new ApiError(
       'No se pudo conectar con la API. Verificá que el backend esté levantado.',

@@ -6,7 +6,7 @@ propia hecha en NestJS, que es la única que habla con `api.github.com`.
 
 | | |
 |---|---|
-| **Demo** | _(pendiente de desplegar)_ |
+| **Demo** | https://profiler-github.vercel.app |
 | **API** | https://profiler-api.ukitech.site · documentación interactiva en [`/docs`](https://profiler-api.ukitech.site/docs) |
 | **Repo** | https://github.com/ContrerasJoel/profiler-github |
 | **Stack** | NestJS 11 · Next.js 16 · TypeScript · Zod · Zustand · shadcn/ui · Recharts · Tailwind v4 |
