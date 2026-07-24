@@ -7,7 +7,8 @@ propia hecha en NestJS, que es la única que habla con `api.github.com`.
 | | |
 |---|---|
 | **Demo** | _(pendiente de desplegar)_ |
-| **API** | _(pendiente de desplegar)_ · documentación interactiva en `/docs` |
+| **API** | https://profiler-api.ukitech.site · documentación interactiva en [`/docs`](https://profiler-api.ukitech.site/docs) |
+| **Repo** | https://github.com/ContrerasJoel/profiler-github |
 | **Stack** | NestJS 11 · Next.js 16 · TypeScript · Zod · Zustand · shadcn/ui · Recharts · Tailwind v4 |
 
 ![Vista general en modo oscuro](docs/dashboard-dark.jpg)
@@ -218,21 +219,24 @@ npm run test:e2e   # health + validación de entrada, sin tocar la red
 ## Despliegue
 
 **Backend** — VPS con Docker, publicado por Nginx Proxy Manager con certificado de
-Let's Encrypt:
+Let's Encrypt en `profiler-api.ukitech.site`:
 
 ```bash
-git clone <este-repo> && cd profiler-github
+git clone https://github.com/ContrerasJoel/profiler-github.git
+cd profiler-github
 cp backend/.env.example backend/.env   # rellenar GITHUB_TOKEN y CORS_ORIGINS
 docker compose up -d --build
 curl localhost:3001/health
 ```
 
-Después, en Nginx Proxy Manager: nuevo *Proxy Host* apuntando al puerto `3001`, con SSL y
-*Force SSL* activados. Para actualizar: `git pull && docker compose up -d --build`.
+Después, en Nginx Proxy Manager: nuevo *Proxy Host* para `profiler-api.ukitech.site`
+apuntando al puerto `3001`, con SSL de Let's Encrypt y *Force SSL* activados.
+Para actualizar: `git pull && docker compose up -d --build`.
 
 **Frontend** — Vercel, con *Root Directory* = `frontend` y las dos variables
 `NEXT_PUBLIC_*`. Una vez desplegado hay que añadir la URL de Vercel a `CORS_ORIGINS` en el
-VPS y reiniciar el contenedor.
+VPS y reiniciar el contenedor — es el paso que más se olvida y produce el clásico error de
+CORS en producción.
 
 ---
 
