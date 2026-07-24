@@ -9,11 +9,33 @@ services:
     env_file:
       - ./backend/.env
     ports:
-      # Expuesto en el host para que Nginx Proxy Manager lo publique con SSL.
-      - "3001:3001"
+      # Solo en loopback: quien publica el servicio hacia internet es el proxy
+      # inverso, que llega por la red compartida de abajo. Publicarlo en 0.0.0.0
+      # expondría el API sin TLS en el puerto 3001 del VPS.
+      # Se mantiene para poder diagnosticar con `curl localhost:3001/health`.
+      - "127.0.0.1:3001:3001"
+    networks:
+      - proxy
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
+
+networks:
+  # Red del proxy inverso (Nginx Proxy Manager).
+  #
+  # El proxy corre en su propio contenedor y en su propia red, así que NO puede
+  # alcanzar al API por el gateway de la red `bridge` por defecto (172.17.0.1):
+  # está en otra red y la petición muere por timeout. La forma robusta es
+  # compartir red y dejar que Docker resuelva el contenedor por su nombre.
+  #
+  # En el Proxy Host: Forward Hostname `profiler-api`, Forward Port `3001`.
+  #
+  # El nombre por defecto es el de este despliegue; sobrescribilo con la variable
+  # PROXY_NETWORK si tu proxy usa otra red. Si no tenés proxy y solo querés
+  # levantar el API suelto: `docker network create general-net`.
+  proxy:
+    external: true
+    name: ${PROXY_NETWORK:-general-net}

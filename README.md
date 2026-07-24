@@ -229,8 +229,15 @@ docker compose up -d --build
 curl localhost:3001/health
 ```
 
+El contenedor se une a la red del proxy inverso (`general-net` por defecto,
+configurable con `PROXY_NETWORK`) y solo publica el puerto en loopback: hacia internet
+sale únicamente por HTTPS a través del proxy.
+
 Después, en Nginx Proxy Manager: nuevo *Proxy Host* para `profiler-api.ukitech.site`
-apuntando al puerto `3001`, con SSL de Let's Encrypt y *Force SSL* activados.
+con **Forward Hostname `profiler-api`** y **Port `3001`** — por nombre de contenedor, no
+por IP. El proxy corre en su propia red, así que apuntarlo al gateway de `bridge`
+(`172.17.0.1`) falla por timeout. Activar SSL de Let's Encrypt y *Force SSL*.
+
 Para actualizar: `git pull && docker compose up -d --build`.
 
 **Frontend** — Vercel, con *Root Directory* = `frontend` y las dos variables
